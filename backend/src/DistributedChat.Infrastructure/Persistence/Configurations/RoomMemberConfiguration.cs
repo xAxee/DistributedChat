@@ -29,7 +29,7 @@ public sealed class RoomMemberConfiguration : IEntityTypeConfiguration<RoomMembe
             .HasOne<Room>()
             .WithMany()
             .HasForeignKey(roomMember => roomMember.RoomId)
-            .OnDelete(DeleteBehavior.Restrict)
+            .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_room_members_rooms_room_id");
 
         builder

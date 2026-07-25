@@ -10,7 +10,15 @@ public interface IRoomStore
         RoomMember creatorMembership,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<RoomSummaryDto>> ListAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<RoomSummaryDto>> ListAsync(
+        Guid currentUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<Room?> GetAsync(Guid roomId, CancellationToken cancellationToken = default);
+
+    Task<Room?> GetByInviteTokenHashAsync(
+        string inviteTokenHash,
+        CancellationToken cancellationToken = default);
 
     Task<RoomDetailsDto?> GetDetailsAsync(
         Guid roomId,
@@ -28,6 +36,10 @@ public interface IRoomStore
         CancellationToken cancellationToken = default);
 
     Task LeaveAsync(Guid roomId, Guid userId, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid roomId, CancellationToken cancellationToken = default);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<RoomMemberDto>> GetMembersAsync(
         Guid roomId,

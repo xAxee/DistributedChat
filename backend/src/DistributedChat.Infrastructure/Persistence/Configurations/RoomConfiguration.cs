@@ -23,6 +23,12 @@ public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
 
         builder.Property(room => room.CreatedByUserId).HasColumnName("created_by_user_id").IsRequired();
 
+        builder.Property(room => room.IsPrivate).HasColumnName("is_private").IsRequired();
+
+        builder.Property(room => room.PasswordHash).HasColumnName("password_hash");
+
+        builder.Property(room => room.InviteTokenHash).HasColumnName("invite_token_hash").HasMaxLength(64);
+
         builder
             .Property(room => room.CreatedAt)
             .HasColumnName("created_at")
@@ -30,6 +36,11 @@ public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
             .IsRequired();
 
         builder.HasIndex(room => room.CreatedAt).HasDatabaseName("ix_rooms_created_at");
+
+        builder
+            .HasIndex(room => room.InviteTokenHash)
+            .IsUnique()
+            .HasDatabaseName("ux_rooms_invite_token_hash");
 
         builder
             .HasOne<User>()

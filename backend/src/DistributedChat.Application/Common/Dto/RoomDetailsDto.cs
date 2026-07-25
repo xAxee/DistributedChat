@@ -5,5 +5,6 @@ public sealed record RoomDetailsDto(
     string Name,
     Guid CreatedByUserId,
     DateTimeOffset CreatedAt,
-    bool IsMember
+    bool IsMember,
+    bool IsPrivate
 );

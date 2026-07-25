@@ -4,6 +4,8 @@ public sealed class Room
 {
     public const int MinimumNameLength = 3;
     public const int MaximumNameLength = 50;
+    public const int MinimumPasswordLength = 8;
+    public const int MaximumPasswordLength = 100;
 
     private Room()
     {
@@ -17,11 +19,19 @@ public sealed class Room
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public bool IsPrivate { get; private set; }
+
+    public string? PasswordHash { get; private set; }
+
+    public string? InviteTokenHash { get; private set; }
+
     public static Room Create(
         Guid id,
         string name,
         Guid createdByUserId,
-        DateTimeOffset createdAt
+        DateTimeOffset createdAt,
+        bool isPrivate = false,
+        string? passwordHash = null
     )
     {
         if (id == Guid.Empty)
@@ -42,7 +52,32 @@ public sealed class Room
             Name = normalizedName,
             CreatedByUserId = createdByUserId,
             CreatedAt = createdAt,
+            IsPrivate = isPrivate,
+            PasswordHash = isPrivate
+                ? RequirePasswordHash(passwordHash)
+                : null,
         };
+    }
+
+    public void Rename(string name)
+    {
+        Name = NormalizeName(name);
+    }
+
+    public void ChangePassword(string passwordHash)
+    {
+        if (!IsPrivate)
+        {
+            throw new InvalidOperationException("Only private rooms have passwords.");
+        }
+
+        PasswordHash = RequirePasswordHash(passwordHash);
+    }
+
+    public void SetInviteTokenHash(string inviteTokenHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(inviteTokenHash);
+        InviteTokenHash = inviteTokenHash;
     }
 
     private static string NormalizeName(string name)
@@ -61,5 +96,11 @@ public sealed class Room
         }
 
         return normalized;
+    }
+
+    private static string RequirePasswordHash(string? passwordHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+        return passwordHash;
     }
 }
