@@ -1,12 +1,15 @@
 using DistributedChat.Application.Common.Abstractions;
 using DistributedChat.Application.Messages;
+using DistributedChat.Application.Rooms;
 using Microsoft.AspNetCore.SignalR;
 using Serilog.Context;
 
 namespace DistributedChat.Api.Hubs;
 
 public sealed class SignalRChatClientNotifier(
-    IHubContext<ChatHub> hubContext
+    IHubContext<ChatHub> hubContext,
+    ConnectionRegistry connectionRegistry,
+    IServiceScopeFactory serviceScopeFactory
 ) : IChatClientNotifier
 {
     public async Task NotifyMessageReceivedAsync(
@@ -19,8 +22,12 @@ public sealed class SignalRChatClientNotifier(
         using var roomScope = LogContext.PushProperty("RoomId", messageCreated.RoomId);
         using var userScope = LogContext.PushProperty("UserId", messageCreated.SenderUserId);
 
+        var connectionIds = await GetAuthorizedConnectionIdsAsync(
+            messageCreated.RoomId,
+            cancellationToken);
+
         await hubContext.Clients
-            .Group(ChatHubGroups.Room(messageCreated.RoomId))
+            .Clients(connectionIds)
             .SendAsync(ChatHubEvents.MessageReceived, messageCreated, cancellationToken);
     }
 
@@ -29,8 +36,12 @@ public sealed class SignalRChatClientNotifier(
         CancellationToken cancellationToken = default
     )
     {
+        var connectionIds = await GetAuthorizedConnectionIdsAsync(
+            userJoinedRoom.RoomId,
+            cancellationToken);
+
         await hubContext.Clients
-            .Group(ChatHubGroups.Room(userJoinedRoom.RoomId))
+            .Clients(connectionIds)
             .SendAsync(ChatHubEvents.UserJoinedRoom, userJoinedRoom, cancellationToken);
     }
 
@@ -39,8 +50,34 @@ public sealed class SignalRChatClientNotifier(
         CancellationToken cancellationToken = default
     )
     {
+        var connectionIds = await GetAuthorizedConnectionIdsAsync(
+            userLeftRoom.RoomId,
+            cancellationToken);
+
         await hubContext.Clients
-            .Group(ChatHubGroups.Room(userLeftRoom.RoomId))
+            .Clients(connectionIds)
             .SendAsync(ChatHubEvents.UserLeftRoom, userLeftRoom, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<string>> GetAuthorizedConnectionIdsAsync(
+        Guid roomId,
+        CancellationToken cancellationToken
+    )
+    {
+        var subscriptions = connectionRegistry.GetRoomSubscriptions(roomId);
+        if (subscriptions.Count == 0)
+        {
+            return [];
+        }
+
+        await using var scope = serviceScopeFactory.CreateAsyncScope();
+        var roomStore = scope.ServiceProvider.GetRequiredService<IRoomStore>();
+        var memberUserIds = await roomStore.GetMemberUserIdsAsync(roomId, cancellationToken);
+        var memberUserIdSet = memberUserIds.ToHashSet();
+
+        return subscriptions
+            .Where(connection => memberUserIdSet.Contains(connection.UserId))
+            .Select(connection => connection.ConnectionId)
+            .ToArray();
     }
 }

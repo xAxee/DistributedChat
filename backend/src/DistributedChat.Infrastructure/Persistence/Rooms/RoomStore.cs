@@ -221,6 +221,18 @@ public sealed class RoomStore(DistributedChatDbContext dbContext) : IRoomStore
             .ToList();
     }
 
+    public async Task<IReadOnlyCollection<Guid>> GetMemberUserIdsAsync(
+        Guid roomId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await dbContext.RoomMembers
+            .AsNoTracking()
+            .Where(member => member.RoomId == roomId)
+            .Select(member => member.UserId)
+            .ToListAsync(cancellationToken);
+    }
+
     private static bool IsRoomMemberDuplicate(DbUpdateException exception)
     {
         return exception.InnerException is PostgresException postgresException
