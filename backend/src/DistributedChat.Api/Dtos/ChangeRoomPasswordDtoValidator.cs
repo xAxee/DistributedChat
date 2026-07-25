@@ -9,6 +9,7 @@ public sealed class ChangeRoomPasswordDtoValidator : AbstractValidator<ChangeRoo
     {
         RuleFor(request => request.Password)
             .NotEmpty()
+            .Must(password => !string.IsNullOrWhiteSpace(password))
             .MinimumLength(Room.MinimumPasswordLength)
             .MaximumLength(Room.MaximumPasswordLength);
     }

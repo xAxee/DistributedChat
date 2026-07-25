@@ -96,6 +96,12 @@ Komponenty stron i ich style:
 - lista pokojów,
 - chat w pokoju.
 
+Widok pokojów obsługuje wybór widoczności i hasło podczas tworzenia. Widok
+czatu pokazuje formularz hasła dla osoby spoza prywatnego pokoju, a właściciel
+ma panel ustawień do zmiany nazwy i hasła, zarządzania członkami, generowania
+zaproszeń oraz usunięcia pokoju. Trasa `/invite/:token` automatycznie realizuje
+zaproszenie i przechodzi do pokoju.
+
 ## Komendy
 
 ```powershell

@@ -45,4 +45,8 @@ public interface IRoomStore
         Guid roomId,
         DateTimeOffset onlineAfter,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<Guid>> GetMemberUserIdsAsync(
+        Guid roomId,
+        CancellationToken cancellationToken = default);
 }

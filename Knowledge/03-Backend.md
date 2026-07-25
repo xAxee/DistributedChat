@@ -67,6 +67,12 @@ Najważniejsze endpointy:
 | `POST` | `/api/rooms/{roomId}/join`                      | tak  | dołączenie do pokoju |
 | `POST` | `/api/rooms/{roomId}/leave`                     | tak  | opuszczenie pokoju   |
 | `GET`  | `/api/rooms/{roomId}/members`                   | tak  | lista członków       |
+| `PUT`  | `/api/rooms/{roomId}`                           | tak  | zmiana nazwy przez właściciela |
+| `PUT`  | `/api/rooms/{roomId}/password`                  | tak  | zmiana hasła prywatnego pokoju |
+| `DELETE` | `/api/rooms/{roomId}/members/{userId}`        | tak  | usunięcie członka przez właściciela |
+| `POST` | `/api/rooms/{roomId}/invite`                    | tak  | generowanie/rotacja zaproszenia |
+| `POST` | `/api/rooms/invitations/{token}/join`           | tak  | dołączenie przez zaproszenie |
+| `DELETE` | `/api/rooms/{roomId}`                         | tak  | usunięcie pokoju przez właściciela |
 | `GET`  | `/api/rooms/{roomId}/messages?before=&limit=50` | tak  | historia wiadomości  |
 | `GET`  | `/api/status`                                   | nie  | status aplikacyjny   |
 

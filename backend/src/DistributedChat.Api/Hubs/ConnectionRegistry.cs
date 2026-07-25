@@ -27,6 +27,17 @@ public sealed class ConnectionRegistry
         .Distinct()
         .Count();
 
+    public IReadOnlyCollection<ChatConnection> GetRoomSubscriptions(Guid roomId)
+    {
+        return connections
+            .Where(connection => connection.Value.RoomSubscriptions.Contains(roomId))
+            .Select(connection => new ChatConnection(
+                connection.Key,
+                connection.Value.UserId,
+                connection.Value.RoomSubscriptions))
+            .ToArray();
+    }
+
     public void Add(string connectionId, Guid userId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionId);

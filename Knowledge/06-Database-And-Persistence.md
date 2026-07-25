@@ -26,6 +26,10 @@ Encje domenowe znajdują się w `backend/src/DistributedChat.Domain/`:
 - `Messages/Message.cs`
 - `ProcessedEvents/ProcessedEvent.cs`
 
+`Room` przechowuje również flagę prywatności, hash hasła oraz opcjonalny hash
+aktywnego tokenu zaproszeniowego. Usunięcie pokoju kaskadowo usuwa jego
+wiadomości i członkostwa.
+
 ## DbContext i konfiguracje
 
 Ważne pliki infrastruktury:

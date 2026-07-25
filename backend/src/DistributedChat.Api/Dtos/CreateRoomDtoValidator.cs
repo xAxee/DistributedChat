@@ -20,6 +20,7 @@ public sealed class CreateRoomDtoValidator : AbstractValidator<CreateRoomDto>
         {
             RuleFor(request => request.Password)
                 .NotEmpty()
+                .Must(password => !string.IsNullOrWhiteSpace(password))
                 .MinimumLength(Room.MinimumPasswordLength)
                 .MaximumLength(Room.MaximumPasswordLength);
         });

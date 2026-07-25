@@ -48,6 +48,11 @@ PostgreSQL pozostaje źródłem prawdy dla trwałego członkostwa pokoju. Endpoi
 
 Przed dodaniem lub usunięciem subskrypcji hub sprawdza, czy pokój istnieje i czy użytkownik jest członkiem pokoju. `UserJoinedRoom` oraz `UserLeftRoom` są publikowane tylko po rzeczywistej zmianie subskrypcji grupy. Rozłączenie klienta czyści lokalne subskrypcje połączenia bez publikowania `UserLeftRoom` i bez usuwania członkostwa z bazy.
 
+Przy wysyłaniu zdarzeń do klientów notifier dodatkowo filtruje lokalne
+subskrypcje według aktualnego członkostwa w PostgreSQL. Chroni to prywatne
+pokoje po usunięciu członka, także gdy akcja właściciela i połączenie usuniętego
+użytkownika trafiły do różnych instancji API.
+
 ## RabbitMQ
 
 RabbitMQ używa domyślnego exchange:
