@@ -1,0 +1,16 @@
+<section class="page invite-page" aria-labelledby="invite-title">
+  <div class="invite-card">
+    <span class="invite-card__icon"><i class="pi pi-envelope" aria-hidden="true"></i></span>
+    @if (joining()) {
+      <p class="page-eyebrow">Room invitation</p>
+      <h1 id="invite-title">Joining the room…</h1>
+      <p>Your invitation is being verified. No room password is required.</p>
+      <i class="pi pi-spin pi-spinner invite-card__spinner" aria-hidden="true"></i>
+    } @else if (failed()) {
+      <p class="page-eyebrow">Room invitation</p>
+      <h1 id="invite-title">This link is no longer active</h1>
+      <p>Ask the room owner to generate a new invitation link.</p>
+      <a class="solid-button" routerLink="/rooms">Back to rooms</a>
+    }
+  </div>
+</section>

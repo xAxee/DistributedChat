@@ -55,11 +55,27 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
   protected readonly loadingOlder = signal(false);
   protected readonly sending = signal(false);
   protected readonly membershipChanging = signal(false);
+  protected readonly settingsSaving = signal(false);
+  protected readonly memberRemovingId = signal<string | null>(null);
+  protected readonly inviteLink = signal<string | null>(null);
+  protected readonly inviteGenerating = signal(false);
   protected readonly currentUser = this.authService.currentUserSnapshot;
   protected readonly connectionState$ = this.chatRealtime.connectionState$;
 
   protected readonly messageForm = this.formBuilder.group({
     content: ['', [Validators.required, Validators.maxLength(2000)]],
+  });
+
+  protected readonly joinForm = this.formBuilder.group({
+    password: ['', [Validators.maxLength(100)]],
+  });
+
+  protected readonly roomSettingsForm = this.formBuilder.group({
+    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+  });
+
+  protected readonly passwordSettingsForm = this.formBuilder.group({
+    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
   });
 
   private roomId = '';
@@ -92,21 +108,29 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (room) => {
           this.room.set(room);
+          this.roomSettingsForm.controls.name.setValue(room.name);
           if (room.isMember) {
             this.loadMemberData();
             void this.joinRealtimeRoom();
           }
         },
-        error: (error: unknown) =>
-          this.errorNotifications.show(error, 'Could not load the room.'),
+        error: (error: unknown) => this.errorNotifications.show(error, 'Could not load the room.'),
       });
   }
 
   protected joinRoom(): void {
+    const currentRoom = this.room();
+    const password = this.joinForm.controls.password.value.trim();
+    if (currentRoom?.isPrivate && !password) {
+      this.joinForm.controls.password.setErrors({ required: true });
+      this.joinForm.controls.password.markAsTouched();
+      return;
+    }
+
     this.membershipChanging.set(true);
 
     this.roomsApi
-      .joinRoom(this.roomId)
+      .joinRoom(this.roomId, password || null)
       .pipe(
         switchMap(() => this.roomsApi.getRoom(this.roomId)),
         finalize(() => this.membershipChanging.set(false)),
@@ -114,11 +138,11 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (room) => {
           this.room.set(room);
+          this.joinForm.reset();
           this.loadMemberData();
           void this.joinRealtimeRoom();
         },
-        error: (error: unknown) =>
-          this.errorNotifications.show(error, 'Could not join the room.'),
+        error: (error: unknown) => this.errorNotifications.show(error, 'Could not join the room.'),
       });
   }
 
@@ -195,9 +219,7 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
         this.messageForm.reset();
         this.scrollMessagesToBottom();
       })
-      .catch((error: unknown) =>
-        this.errorNotifications.show(error, 'Could not send the message.'),
-      )
+      .catch((error: unknown) => this.errorNotifications.show(error, 'Could not send the message.'))
       .finally(() => this.sending.set(false));
   }
 
@@ -227,6 +249,102 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
     return room.createdByUserId === this.currentUser?.id;
   }
 
+  protected saveRoomName(): void {
+    if (this.roomSettingsForm.invalid) {
+      this.roomSettingsForm.markAllAsTouched();
+      return;
+    }
+
+    this.settingsSaving.set(true);
+    this.roomsApi
+      .updateRoom(this.roomId, this.roomSettingsForm.getRawValue().name.trim())
+      .pipe(finalize(() => this.settingsSaving.set(false)))
+      .subscribe({
+        next: (room) => {
+          this.room.set(room);
+          this.roomSettingsForm.controls.name.setValue(room.name);
+        },
+        error: (error: unknown) =>
+          this.errorNotifications.show(error, 'Could not rename the room.'),
+      });
+  }
+
+  protected saveRoomPassword(): void {
+    if (this.passwordSettingsForm.invalid) {
+      this.passwordSettingsForm.markAllAsTouched();
+      return;
+    }
+
+    this.settingsSaving.set(true);
+    this.roomsApi
+      .changePassword(this.roomId, this.passwordSettingsForm.getRawValue().password)
+      .pipe(finalize(() => this.settingsSaving.set(false)))
+      .subscribe({
+        next: () => this.passwordSettingsForm.reset(),
+        error: (error: unknown) =>
+          this.errorNotifications.show(error, 'Could not change the room password.'),
+      });
+  }
+
+  protected removeMember(member: RoomMember): void {
+    if (!window.confirm(`Remove ${member.username} from this room?`)) {
+      return;
+    }
+
+    this.memberRemovingId.set(member.userId);
+    this.roomsApi
+      .removeMember(this.roomId, member.userId)
+      .pipe(finalize(() => this.memberRemovingId.set(null)))
+      .subscribe({
+        next: () =>
+          this.members.update((members) =>
+            members.filter((candidate) => candidate.userId !== member.userId),
+          ),
+        error: (error: unknown) =>
+          this.errorNotifications.show(error, 'Could not remove the member.'),
+      });
+  }
+
+  protected generateInvite(): void {
+    this.inviteGenerating.set(true);
+    this.roomsApi
+      .generateInvite(this.roomId)
+      .pipe(finalize(() => this.inviteGenerating.set(false)))
+      .subscribe({
+        next: (invite) => this.inviteLink.set(`${window.location.origin}/invite/${invite.token}`),
+        error: (error: unknown) =>
+          this.errorNotifications.show(error, 'Could not generate an invitation.'),
+      });
+  }
+
+  protected copyInvite(): void {
+    const link = this.inviteLink();
+    if (!link) return;
+
+    void navigator.clipboard
+      .writeText(link)
+      .catch((error: unknown) =>
+        this.errorNotifications.show(error, 'Could not copy the invitation.'),
+      );
+  }
+
+  protected deleteRoom(): void {
+    const currentRoom = this.room();
+    if (!currentRoom || !window.confirm(`Delete "${currentRoom.name}" and all of its messages?`)) {
+      return;
+    }
+
+    this.settingsSaving.set(true);
+    this.roomsApi
+      .deleteRoom(this.roomId)
+      .pipe(finalize(() => this.settingsSaving.set(false)))
+      .subscribe({
+        next: () => void this.router.navigate(['/rooms']),
+        error: (error: unknown) =>
+          this.errorNotifications.show(error, 'Could not delete the room.'),
+      });
+  }
+
   protected userInitial(username: string): string {
     return username.trim().charAt(0).toUpperCase() || '?';
   }
@@ -246,8 +364,7 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
           this.hasMore.set(messages.hasMore);
           this.scrollMessagesToBottom();
         },
-        error: (error: unknown) =>
-          this.errorNotifications.show(error, 'Could not load room data.'),
+        error: (error: unknown) => this.errorNotifications.show(error, 'Could not load room data.'),
       });
   }
 

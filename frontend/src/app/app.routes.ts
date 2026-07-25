@@ -37,6 +37,15 @@ export const routes: Routes = [
     title: 'About | DistributedChat',
   },
   {
+    path: 'invite/:token',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/rooms/invite-join-page.component').then(
+        (component) => component.InviteJoinPageComponent,
+      ),
+    title: 'Room invitation | DistributedChat',
+  },
+  {
     path: 'rooms/:roomId',
     canActivate: [authGuard],
     loadComponent: () =>
