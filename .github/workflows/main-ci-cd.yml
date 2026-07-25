@@ -61,7 +61,7 @@ jobs:
         run: npm run lint
 
       - name: Test frontend
-        run: npm test -- --no-watch --no-progress --browsers=ChromeHeadless
+        run: npm test
 
       - name: Build frontend
         run: npm run build
