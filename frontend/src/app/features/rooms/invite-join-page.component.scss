@@ -1,0 +1,38 @@
+.invite-page {
+  display: grid;
+  min-height: calc(100vh - 9rem);
+  place-items: center;
+}
+
+.invite-card {
+  width: min(34rem, 100%);
+  padding: 3rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+}
+
+.invite-card__icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1.5rem;
+  background: var(--ink);
+  color: var(--surface);
+  place-items: center;
+}
+
+.invite-card p {
+  color: var(--muted);
+}
+
+.invite-card .solid-button {
+  display: inline-flex;
+  margin-top: 1rem;
+}
+
+.invite-card__spinner {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+}

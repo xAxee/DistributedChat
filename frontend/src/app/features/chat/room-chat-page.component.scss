@@ -160,6 +160,20 @@
   margin: 0;
 }
 
+.join-room-form {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 14rem;
+}
+
+.join-room-form label,
+.settings-form label,
+.settings-form__label {
+  color: var(--muted-strong);
+  font-size: 0.67rem;
+  font-weight: 650;
+}
+
 .chat-layout {
   align-items: stretch;
   display: grid;
@@ -434,6 +448,45 @@
   margin-left: auto;
 }
 
+.member__remove {
+  color: var(--red);
+  height: 1.8rem;
+  margin-left: auto;
+  width: 1.8rem;
+}
+
+.room-settings {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+}
+
+.settings-form {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.settings-form__row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.settings-form__row .editorial-input {
+  min-width: 0;
+}
+
+.settings-form small {
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.danger-button {
+  color: var(--red);
+  justify-self: start;
+}
+
 .realtime-state {
   border-top: 1px solid var(--line);
   color: var(--muted);
@@ -504,6 +557,11 @@
 
   .join-state .solid-button {
     grid-column: 1 / -1;
+  }
+
+  .join-room-form {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .messages-panel {
