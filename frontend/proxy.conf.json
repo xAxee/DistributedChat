@@ -1,0 +1,18 @@
+{
+  "/api": {
+    "target": "http://localhost",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/health": {
+    "target": "http://localhost",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/hubs": {
+    "target": "http://localhost",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true
+  }
+}

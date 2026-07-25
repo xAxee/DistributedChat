@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/cache/
+.npm/
+
+.git/
+.vscode/
+
+*.log
+npm-debug.log*
+Dockerfile*

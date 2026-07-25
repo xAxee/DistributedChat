@@ -1,0 +1,44 @@
+<section class="auth-page" aria-labelledby="login-title">
+  <div class="auth-panel">
+    <a class="auth-panel__brand" routerLink="/rooms" aria-label="DistributedChat home">
+      <span>DC</span><strong>DistributedChat</strong>
+    </a>
+    <div class="auth-card__header">
+      <p class="page-eyebrow">Welcome back</p>
+      <h2 id="login-title">Sign in</h2>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <div class="field">
+        <label for="login">Email</label>
+        <input class="editorial-input" id="login" formControlName="login" autocomplete="username"
+          placeholder="you@example.com" required />
+        @if (form.controls.login.invalid && form.controls.login.touched) {
+        <span class="field__error">{{ loginError() }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <p-password inputId="password" formControlName="password" autocomplete="current-password" [feedback]="false"
+          placeholder="Password" [toggleMask]="true" [fluid]="true" required />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+        <span class="field__error">{{ passwordError() }}</span>
+        }
+      </div>
+
+
+      <button class="solid-button auth-submit" type="submit" [disabled]="loading()">
+        @if (loading()) {
+        <i class="pi pi-spin pi-spinner" aria-hidden="true"></i> Signing in...
+        } @else {
+        Sign in <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        }
+      </button>
+    </form>
+
+    <div class="auth-card__footer">
+      <span>New here?</span><a class="text-button" routerLink="/register">Create account</a>
+    </div>
+  </div>
+</section>

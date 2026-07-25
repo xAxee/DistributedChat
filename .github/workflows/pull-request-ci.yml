@@ -1,0 +1,98 @@
+name: Pull Request CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend | Build & test
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore backend dependencies
+        run: dotnet restore DistributedChat.slnx
+
+      - name: Build backend
+        run: dotnet build DistributedChat.slnx --configuration Release --no-restore
+
+      - name: Test backend
+        run: dotnet test DistributedChat.slnx --configuration Release --no-build --verbosity normal
+
+      - name: Check backend formatting
+        run: dotnet format DistributedChat.slnx --verify-no-changes --verbosity diagnostic --no-restore
+
+  frontend:
+    name: Frontend | Build & test
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Test frontend
+        run: npm test -- --no-watch --no-progress --browsers=ChromeHeadless
+
+      - name: Build frontend
+        run: npm run build
+
+  docker:
+    name: Docker | Compose & images
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose file
+        run: docker compose config
+
+      - name: Build API image
+        run: |
+          docker build \
+            --file backend/src/DistributedChat.Api/Dockerfile \
+            --target runtime \
+            --tag distributed-chat-api:pr \
+            .
+
+      - name: Build web image
+        run: |
+          docker build \
+            --file frontend/Dockerfile \
+            --target runtime \
+            --tag distributed-chat-web:pr \
+            frontend
