@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="backend/src/DistributedChat.Api/DistributedChat.Api.csproj" />
+    <Project Path="backend/src/DistributedChat.Application/DistributedChat.Application.csproj" />
+    <Project Path="backend/src/DistributedChat.Domain/DistributedChat.Domain.csproj" />
+    <Project Path="backend/src/DistributedChat.Infrastructure/DistributedChat.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="backend/tests/DistributedChat.IntegrationTests/DistributedChat.IntegrationTests.csproj" />
+    <Project Path="backend/tests/DistributedChat.UnitTests/DistributedChat.UnitTests.csproj" />
+  </Folder>
+</Solution>

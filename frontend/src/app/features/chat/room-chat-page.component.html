@@ -1,0 +1,188 @@
+<section class="page chat-page" aria-labelledby="chat-title">
+  <header class="room-header">
+    <a class="back-link" routerLink="/rooms" aria-label="Back to rooms">
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+    </a>
+
+    <div class="room-heading">
+      <span class="room-heading__icon"><i class="pi pi-hashtag" aria-hidden="true"></i></span>
+      <div>
+        <h1 id="chat-title">{{ room()?.name ?? 'Loading room' }}</h1>
+      </div>
+    </div>
+
+    <div class="room-header__actions">
+      @if (room(); as currentRoom) {
+      @if (currentRoom.isMember) {
+      <button class="text-button leave-button" type="button" [disabled]="membershipChanging()" (click)="leaveRoom()">
+        {{ membershipChanging() ? 'Leaving...' : 'Leave' }}
+      </button>
+      } @else {
+      <button class="solid-button" type="button" [disabled]="membershipChanging()" (click)="joinRoom()">
+        {{ membershipChanging() ? 'Joining...' : 'Join room' }}
+      </button>
+      }
+      }
+    </div>
+  </header>
+
+  @if (room(); as currentRoom) {
+  <div class="room-meta" aria-label="Room details">
+    <span><i class="pi pi-comments" aria-hidden="true"></i>
+      {{ hasMore() ? messages().length + "+" : messages().length }} messages
+    </span>
+    <span><i class="pi pi-users" aria-hidden="true"></i>{{ members().length }} members</span>
+    <span><i class="pi pi-calendar" aria-hidden="true"></i>{{ currentRoom.createdAt | date: 'MMM d, y' }}</span>
+    @if (isCreatedByCurrentUser(currentRoom)) {
+    <span class="room-meta__owner">Created by you</span>
+    }
+  </div>
+  }
+
+
+  @if (loading() && !room()) {
+  <div class="chat-loading" aria-label="Loading room">
+    <span></span><span></span><span></span>
+  </div>
+  } @else if (room(); as currentRoom) {
+  @if (!currentRoom.isMember) {
+  <section class="join-state" aria-labelledby="join-title">
+    <span class="join-state__icon"><i class="pi pi-lock" aria-hidden="true"></i></span>
+    <div>
+      <p class="page-eyebrow">Members only</p>
+      <h2 id="join-title">Join {{ currentRoom.name }}</h2>
+      <p>Membership is required to read messages and see the member list.</p>
+    </div>
+    <button class="solid-button" type="button" [disabled]="membershipChanging()" (click)="joinRoom()">
+      {{ membershipChanging() ? 'Joining...' : 'Join conversation' }}
+    </button>
+  </section>
+  } @else {
+  <div class="chat-layout">
+    <section class="messages-panel" aria-labelledby="messages-title">
+      <header class="panel-heading">
+        <div>
+          <h2 id="messages-title">Messages</h2>
+        </div>
+      </header>
+
+      <div #messagesScroll class="messages-scroll" aria-label="Message history">
+        @if (hasMore()) {
+        <div class="load-older-container">
+          <button class="text-button load-older" type="button" [disabled]="loadingOlder()"
+            (click)="loadOlderMessages()">
+            @if (loadingOlder()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+            Loading...
+            } @else {
+            <i class="pi pi-arrow-up" aria-hidden="true"></i>
+            Older
+            }
+          </button>
+        </div>
+        }
+
+        @if (loading() && messages().length === 0) {
+        <div class="chat-loading chat-loading--compact" aria-label="Loading messages">
+          <span></span><span></span><span></span>
+        </div>
+        } @else if (messages().length === 0) {
+        <p class="empty-state">No messages yet. Start the conversation.</p>
+        } @else {
+        <ol class="messages" aria-label="Message history">
+          @for (message of messages(); track message.id) {
+          <li class="message" [class.message--mine]="isMine(message)">
+            <span class="message__avatar">{{ userInitial(message.senderUsername) }}</span>
+            <div class="message__body">
+              <div class="message__meta">
+                <strong>{{ message.senderUsername }}</strong>
+                <time [attr.datetime]="message.createdAt" [title]="message.createdAt | date: 'medium'">
+                  {{ message.createdAt | date: 'HH:mm' }}
+                </time>
+              </div>
+              <p class="message__content">{{ message.content }}</p>
+            </div>
+          </li>
+          }
+        </ol>
+        }
+      </div>
+
+      <form class="message-form" [formGroup]="messageForm" (ngSubmit)="sendMessage()">
+        <label class="sr-only" for="message-content">Write a message</label>
+        <div class="message-composer">
+          <textarea id="message-content" formControlName="content" rows="2" maxlength="2000" autocomplete="off"
+            placeholder="Write a message..." required (keydown)="handleComposerKeydown($event)"></textarea>
+          <button class="solid-button send-button" type="submit" aria-label="Send message" [disabled]="sending()">
+            @if (sending()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+            } @else {
+            <i class="pi pi-send" aria-hidden="true"></i>
+            }
+          </button>
+        </div>
+        <div class="message-form__meta">
+          @if (messageForm.controls.content.invalid && messageForm.controls.content.touched) {
+          <span class="field__error">{{ messageError() }}</span>
+          } @else {
+          <span>Enter to send</span>
+          }
+          <small>{{ messageForm.controls.content.value.length }}/2000</small>
+        </div>
+      </form>
+    </section>
+
+    <aside class="members-panel" aria-labelledby="members-title">
+      <header class="panel-heading">
+        <div>
+          <h2 id="members-title">Members</h2>
+        </div>
+        <span class="member-count">{{ members().length }}</span>
+      </header>
+
+      @if (members().length === 0) {
+      <p class="empty-state">No members to display.</p>
+      } @else {
+      <ul class="members-list" aria-label="Room members">
+        @for (member of members(); track member.userId) {
+        <li class="member">
+          <span class="member__avatar">{{ userInitial(member.username) }}</span>
+          <div>
+            <strong>{{ member.username }}</strong>
+            <span>Joined {{ member.joinedAt | date: 'MMM d, y' }}</span>
+          </div>
+          @if (member.userId === currentUser?.id) {
+          <span class="member__you">You</span>
+          }
+        </li>
+        }
+      </ul>
+      }
+
+      @if (connectionState$ | async; as connectionState) {
+      <footer class="realtime-state" [class.realtime-state--online]="connectionState === 'connected'"
+        [class.realtime-state--pending]="
+                connectionState === 'connecting' || connectionState === 'reconnecting'
+              ">
+        <span></span>
+        @switch (connectionState) {
+        @case ('connected') {
+        Realtime connected
+        }
+        @case ('reconnecting') {
+        Reconnecting
+        }
+        @case ('connecting') {
+        Connecting
+        }
+        @default {
+        Realtime offline
+        }
+        }
+      </footer>
+      }
+    </aside>
+  </div>
+  }
+  }
+</section>

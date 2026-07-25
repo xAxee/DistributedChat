@@ -1,0 +1,172 @@
+<section class="page about-page" aria-labelledby="about-title">
+  <header class="about-hero">
+    <div>
+      <p class="page-eyebrow">Project overview</p>
+      <h1 id="about-title">Distributed<br />Chat.</h1>
+    </div>
+
+    <div class="about-intro">
+      <p>
+        DistributedChat is a small real-time chat project built around multiple API instances.
+        PostgreSQL stores the application state, while RabbitMQ distributes chat and presence
+        events between backend instances.
+      </p>
+
+      <div class="about-links">
+        <a href="https://github.com/xAxee/DistributedChat" target="_blank" rel="noopener noreferrer">
+          <i class="pi pi-github" aria-hidden="true"></i>
+          GitHub
+        </a>
+
+        <a href="https://hubertiwan.pl" target="_blank" rel="noopener noreferrer">
+          <i class="pi pi-globe" aria-hidden="true"></i>
+          hubertiwan.pl
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="status-layout" aria-label="System status">
+    <article class="uptime-card">
+      <div class="section-heading">
+        <div>
+          <h2 id="system-title">API uptime</h2>
+        </div>
+      </div>
+      <strong>
+        {{ systemStatus() ? formatUptime(systemStatus()!.uptimeSeconds) : '—' }}
+      </strong>
+      <small>Started {{ systemStatus()?.startedAt | date: 'MMM d, y, HH:mm' }}</small>
+    </article>
+
+    <article class="system-card" aria-labelledby="system-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="system-title">System status</h2>
+        </div>
+
+        <button class="system-state" type="button" [class.system-state--online]="readyHealthy() === true"
+          [class.system-state--pending]="loadingStatus()" (click)="loadSystemStatus()">
+          <span></span>
+          {{ loadingStatus() ? 'Checking' : readyHealthy() ? 'Operational' : 'Unavailable' }}
+        </button>
+      </div>
+
+      <dl class="health-list">
+        <div>
+          <dt>Liveness</dt>
+          <dd [class.health-ok]="liveHealthy() === true">
+            {{ liveHealthy() ? 'Healthy' : 'Down' }}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Readiness</dt>
+          <dd [class.health-ok]="readyHealthy() === true">
+            {{ readyHealthy() ? 'Ready' : 'Not ready' }}
+          </dd>
+        </div>
+      </dl>
+
+      @if (systemStatus(); as status) {
+      <dl class="system-meta">
+        <div>
+          <dt>Instance</dt>
+          <dd [title]="status.instanceId">{{ status.instanceId }}</dd>
+        </div>
+
+        <div>
+          <dt>Version</dt>
+          <dd [title]="status.applicationVersion">
+            {{ status.applicationVersion }}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Connections</dt>
+          <dd>{{ status.activeConnections }}</dd>
+        </div>
+      </dl>
+      } @else if (!loadingStatus()) {
+      <p class="unavailable">Status details are currently unavailable.</p>
+      }
+    </article>
+  </section>
+
+  <section class="stack-section" aria-labelledby="stack-title">
+    <header class="stack-heading">
+      <h2 id="stack-title">Tech stack</h2>
+    </header>
+
+    <div class="stack-grid">
+      <article class="stack-card">
+        <div class="stack-card-heading">
+          <h3>Frontend</h3>
+        </div>
+
+        <p>
+          An Angular SPA for managing rooms, sending messages and displaying live connection
+          updates.
+        </p>
+
+        <ul class="stack-list" aria-label="Frontend technologies">
+          <li>Angular 21</li>
+          <li>TypeScript</li>
+          <li>RxJS</li>
+          <li>PrimeNG</li>
+        </ul>
+      </article>
+
+      <article class="stack-card">
+        <div class="stack-card-heading">
+          <h3>Backend</h3>
+        </div>
+
+        <p>
+          A .NET API responsible for authentication, rooms, message history and SignalR
+          connections.
+        </p>
+
+        <ul class="stack-list" aria-label="Backend technologies">
+          <li>.NET 10</li>
+          <li>ASP.NET Core</li>
+          <li>SignalR</li>
+          <li>Entity Framework Core</li>
+        </ul>
+      </article>
+
+      <article class="stack-card">
+        <div class="stack-card-heading">
+          <h3>Data &amp; messaging</h3>
+        </div>
+
+        <p>
+          PostgreSQL stores persistent application data. RabbitMQ forwards chat and presence
+          events between API instances.
+        </p>
+
+        <ul class="stack-list" aria-label="Data and messaging technologies">
+          <li>PostgreSQL</li>
+          <li>RabbitMQ</li>
+        </ul>
+      </article>
+
+      <article class="stack-card">
+        <div class="stack-card-heading">
+          <h3>Infrastructure</h3>
+        </div>
+
+        <p>
+          The full application runs locally in Docker containers behind Nginx, with builds and
+          tests handled by GitHub Actions.
+        </p>
+
+        <ul class="stack-list" aria-label="Infrastructure technologies">
+          <li>Docker Compose</li>
+          <li>Nginx</li>
+          <li>GitHub Actions</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+</section>

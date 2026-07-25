@@ -1,0 +1,108 @@
+<section class="page rooms-page" aria-labelledby="rooms-title">
+  <header class="page-heading">
+    <div>
+      <p class="page-eyebrow">Workspace</p>
+      <h1 id="rooms-title">Rooms</h1>
+    </div>
+    <button class="icon-button refresh-button" type="button" aria-label="Refresh rooms" [disabled]="loadingRooms()"
+      (click)="refreshDashboard()">
+      <i class="pi pi-refresh" [class.refresh-button__spin]="loadingRooms()" aria-hidden="true"></i><span>Refresh</span>
+    </button>
+  </header>
+
+  @if (loadingRooms()) {
+  <div class="rooms-loading" aria-label="Loading rooms">
+    <span></span><span></span><span></span>
+  </div>
+  } @else {
+  <section class="rooms-list" aria-labelledby="joined-rooms-title">
+    <div class="section-heading rooms-list__heading">
+      <div>
+        <p class="page-eyebrow">Your space</p>
+        <h2 id="joined-rooms-title">Joined rooms</h2>
+      </div>
+      <span class="rooms-list__count">{{ joinedRooms().length }}</span>
+    </div>
+    <div class="rooms-grid" aria-label="Joined rooms">
+      <article class="room-card create-room-card">
+        <div class="room-card__header">
+          <span class="room-card__icon"><i class="pi pi-plus" aria-hidden="true"></i></span><span
+            class="room-card__state">New room</span>
+        </div>
+        <form class="create-room-form" [formGroup]="createRoomForm" (ngSubmit)="createRoom()">
+          <div class="room-card__body field">
+            <label for="room-name">Start a conversation</label>
+            <input class="editorial-input" id="room-name" formControlName="name" maxlength="50" placeholder="Room name"
+              required />
+            @if (createRoomForm.controls.name.invalid && createRoomForm.controls.name.touched) {
+            <span class="field__error">{{ roomNameError() }}</span>
+            }
+          </div>
+          <div class="room-card__actions">
+            <span class="create-room-card__hint">Use a clear name</span><button class="room-card__open" type="submit"
+              [disabled]="creatingRoom()">
+              {{ creatingRoom() ? 'Creating...' : 'Create' }}
+              <i class="pi pi-arrow-up-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </form>
+      </article>
+      @for (room of joinedRooms(); track room.id) {
+      <article class="room-card room-card--joined">
+        <div class="room-card__header">
+          <span class="room-card__icon"><i class="pi pi-hashtag" aria-hidden="true"></i></span><span
+            class="room-card__state">Joined</span>
+        </div>
+        <div class="room-card__body">
+          <h3>{{ room.name }}</h3>
+          <p>{{ room.createdAt | date: 'MMM d, y' }}</p>
+        </div>
+        <div class="room-card__actions">
+          <button class="text-button room-card__leave" type="button" [disabled]="actionRoomId() === room.id"
+            (click)="leaveRoom(room)">
+            {{ actionRoomId() === room.id ? 'Leaving...' : 'Leave' }}
+          </button>
+          <a class="room-card__open" [routerLink]="['/rooms', room.id]">Open <i class="pi pi-arrow-up-right"
+              aria-hidden="true"></i></a>
+        </div>
+      </article>
+      }
+    </div>
+  </section>
+
+  <section class="rooms-list" aria-labelledby="available-rooms-title">
+    <div class="section-heading rooms-list__heading">
+      <div>
+        <p class="page-eyebrow">Directory</p>
+        <h2 id="available-rooms-title">Discover rooms</h2>
+      </div>
+      <span class="rooms-list__count">{{ availableRooms().length }}</span>
+    </div>
+    @if (availableRooms().length === 0) {
+    <p class="empty-state">You have joined every available room.</p>
+    } @else {
+    <div class="rooms-grid" aria-label="Rooms to discover">
+      @for (room of availableRooms(); track room.id) {
+      <article class="room-card">
+        <div class="room-card__header">
+          <span class="room-card__icon"><i class="pi pi-hashtag" aria-hidden="true"></i></span><span
+            class="room-card__state">Open</span>
+        </div>
+        <div class="room-card__body">
+          <h3>{{ room.name }}</h3>
+          <p>{{ room.createdAt | date: 'MMM d, y' }}</p>
+        </div>
+        <div class="room-card__actions">
+          <button class="text-button" type="button" [disabled]="actionRoomId() === room.id" (click)="joinRoom(room)">
+            {{ actionRoomId() === room.id ? 'Joining...' : 'Join' }}
+          </button>
+          <a class="room-card__open" [routerLink]="['/rooms', room.id]">Preview <i class="pi pi-arrow-up-right"
+              aria-hidden="true"></i></a>
+        </div>
+      </article>
+      }
+    </div>
+    }
+  </section>
+  }
+</section>

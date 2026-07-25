@@ -1,0 +1,53 @@
+<section class="auth-page" aria-labelledby="register-title">
+  <div class="auth-panel">
+    <a class="auth-panel__brand" routerLink="/rooms" aria-label="DistributedChat home">
+      <span>DC</span><strong>DistributedChat</strong>
+    </a>
+    <div class="auth-card__header">
+      <p class="page-eyebrow">Welcome</p>
+      <h2 id="register-title">Create account</h2>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input class="editorial-input" id="email" formControlName="email" type="email" autocomplete="email"
+          placeholder="you@example.com" required />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+        <span class="field__error">{{ emailError() }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input class="editorial-input" id="username" formControlName="username" autocomplete="username"
+          placeholder="username" required />
+        @if (form.controls.username.invalid && form.controls.username.touched) {
+        <span class="field__error">{{ usernameError() }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <p-password inputId="password" formControlName="password" autocomplete="new-password" [feedback]="false"
+          placeholder="Password" [toggleMask]="true" [fluid]="true" required />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+        <span class="field__error">{{ passwordError() }}</span>
+        }
+      </div>
+
+
+      <button class="solid-button auth-submit" type="submit" [disabled]="loading()">
+        @if (loading()) {
+        <i class="pi pi-spin pi-spinner" aria-hidden="true"></i> Creating...
+        } @else {
+        Create account <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        }
+      </button>
+    </form>
+
+    <div class="auth-card__footer">
+      <span>Already registered?</span><a class="text-button" routerLink="/login">Sign in</a>
+    </div>
+  </div>
+</section>

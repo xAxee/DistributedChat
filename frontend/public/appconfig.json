@@ -1,0 +1,5 @@
+{
+  "applicationName": "DistributedChat",
+  "apiBaseUrl": "/api",
+  "signalRHubUrl": "/hubs/chat"
+}

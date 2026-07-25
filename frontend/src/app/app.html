@@ -1,0 +1,40 @@
+<p-toast position="top-right" />
+
+@if (!isAuthPage()) {
+<header class="app-header">
+  <a class="app-brand" routerLink="/rooms" aria-label="DistributedChat home">
+    <span class="app-brand__mark">DC</span>
+    <span class="app-brand__name">DistributedChat</span>
+  </a>
+
+  <nav class="app-nav" aria-label="Main navigation">
+    <a routerLink="/rooms" routerLinkActive="app-nav__link--active" [routerLinkActiveOptions]="{ exact: true }">
+      <i class="pi pi-comments" aria-hidden="true"></i>
+      <span>Home</span>
+    </a>
+    <a routerLink="/about" routerLinkActive="app-nav__link--active">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <span>About</span>
+    </a>
+  </nav>
+
+  <div class="app-header__actions">
+    @if (currentUser$ | async; as user) {
+    <div class="app-user">
+      <span class="app-user__avatar">{{ userInitial(user.username) }}</span>
+      <span class="app-user__name">{{ user.username }}</span>
+      <button class="icon-button" type="button" aria-label="Log out" (click)="logout()">
+        <i class="pi pi-sign-out" aria-hidden="true"></i>
+      </button>
+    </div>
+    } @else {
+    <a class="text-button" routerLink="/login">Log in</a>
+    <a class="solid-button solid-button--small" routerLink="/register">Create account</a>
+    }
+  </div>
+</header>
+}
+
+<main class="app-shell">
+  <router-outlet />
+</main>
