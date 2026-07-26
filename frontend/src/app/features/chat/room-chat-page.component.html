@@ -13,15 +13,17 @@
 
     <div class="room-header__actions">
       @if (room(); as currentRoom) {
-        @if (currentRoom.isMember && !isCreatedByCurrentUser(currentRoom)) {
-          <button
-            class="text-button leave-button"
-            type="button"
-            [disabled]="membershipChanging()"
-            (click)="leaveRoom()"
-          >
-            {{ membershipChanging() ? 'Leaving...' : 'Leave' }}
-          </button>
+        @if (currentRoom.isMember) {
+          @if (!isCreatedByCurrentUser(currentRoom)) {
+            <button
+              class="text-button leave-button"
+              type="button"
+              [disabled]="membershipChanging()"
+              (click)="leaveRoom()"
+            >
+              {{ membershipChanging() ? 'Leaving...' : 'Leave' }}
+            </button>
+          }
         } @else {
           <button
             class="solid-button"
