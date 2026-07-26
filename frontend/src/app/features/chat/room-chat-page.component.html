@@ -191,7 +191,21 @@
             <div>
               <h2 id="members-title">Members</h2>
             </div>
-            <span class="member-count">{{ members().length }}</span>
+            <div class="members-panel__actions">
+              <span class="member-count">{{ members().length }}</span>
+              @if (isCreatedByCurrentUser(currentRoom)) {
+                <button
+                  class="icon-button settings-button"
+                  type="button"
+                  aria-label="Open room settings"
+                  aria-haspopup="dialog"
+                  [attr.aria-expanded]="settingsOpen()"
+                  (click)="openSettings()"
+                >
+                  <i class="pi pi-cog" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
           </header>
 
           @if (members().length === 0) {
@@ -229,98 +243,6 @@
             </ul>
           }
 
-          @if (isCreatedByCurrentUser(currentRoom)) {
-            <section class="room-settings" aria-labelledby="room-settings-title">
-              <header class="panel-heading">
-                <div>
-                  <h2 id="room-settings-title">Room settings</h2>
-                </div>
-              </header>
-
-              <form
-                class="settings-form"
-                [formGroup]="roomSettingsForm"
-                (ngSubmit)="saveRoomName()"
-              >
-                <label for="settings-room-name">Room name</label>
-                <div class="settings-form__row">
-                  <input
-                    class="editorial-input"
-                    id="settings-room-name"
-                    formControlName="name"
-                    maxlength="50"
-                  />
-                  <button class="text-button" type="submit" [disabled]="settingsSaving()">
-                    Save
-                  </button>
-                </div>
-              </form>
-
-              @if (currentRoom.isPrivate) {
-                <form
-                  class="settings-form"
-                  [formGroup]="passwordSettingsForm"
-                  (ngSubmit)="saveRoomPassword()"
-                >
-                  <label for="settings-room-password">New password</label>
-                  <div class="settings-form__row">
-                    <input
-                      class="editorial-input"
-                      id="settings-room-password"
-                      type="password"
-                      formControlName="password"
-                      maxlength="100"
-                      autocomplete="new-password"
-                      placeholder="At least 8 characters"
-                    />
-                    <button class="text-button" type="submit" [disabled]="settingsSaving()">
-                      Change
-                    </button>
-                  </div>
-                </form>
-              }
-
-              <div class="settings-form">
-                <span class="settings-form__label">Invitation link</span>
-                @if (inviteLink(); as link) {
-                  <div class="settings-form__row">
-                    <input
-                      class="editorial-input"
-                      readonly
-                      [value]="link"
-                      aria-label="Invitation link"
-                    />
-                    <button class="text-button" type="button" (click)="copyInvite()">Copy</button>
-                  </div>
-                }
-                <button
-                  class="text-button"
-                  type="button"
-                  [disabled]="inviteGenerating()"
-                  (click)="generateInvite()"
-                >
-                  {{
-                    inviteGenerating()
-                      ? 'Generating...'
-                      : inviteLink()
-                        ? 'Generate a new link'
-                        : 'Generate link'
-                  }}
-                </button>
-                <small>Generating a new link disables the previous one.</small>
-              </div>
-
-              <button
-                class="text-button danger-button"
-                type="button"
-                [disabled]="settingsSaving()"
-                (click)="deleteRoom()"
-              >
-                Delete room
-              </button>
-            </section>
-          }
-
           @if (connectionState$ | async; as connectionState) {
             <footer
               class="realtime-state"
@@ -348,6 +270,21 @@
           }
         </aside>
       </div>
+
+      @if (isCreatedByCurrentUser(currentRoom) && settingsOpen()) {
+        <app-room-settings-popup
+          [room]="currentRoom"
+          [saving]="settingsSaving()"
+          [inviteGenerating]="inviteGenerating()"
+          [inviteLink]="inviteLink()"
+          (closed)="closeSettings()"
+          (roomNameSaved)="saveRoomName($event)"
+          (roomPasswordSaved)="saveRoomPassword($event)"
+          (inviteRequested)="generateInvite()"
+          (inviteCopyRequested)="copyInvite()"
+          (roomDeleteRequested)="deleteRoom()"
+        />
+      }
     }
   }
 </section>

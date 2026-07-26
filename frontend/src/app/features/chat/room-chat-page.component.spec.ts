@@ -1,18 +1,19 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { NEVER, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ChatRealtimeService } from '../../core/chat/chat-realtime.service';
-import { ErrorNotificationService } from '../../core/notifications/error-notification.service';
-import { RoomsApiService } from '../../core/rooms/rooms-api.service';
+import { RoomDetails } from '../../core/models/room.models';
+import { RoomChatFacade } from './room-chat.facade';
 import { RoomChatPageComponent } from './room-chat-page.component';
 
 describe('RoomChatPageComponent', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   it('should create', () => {
-    const joinRoom = vi.fn(() => NEVER);
+    const joinRoom = vi.fn(() => Promise.resolve(true));
+    const room = signal<RoomDetails | null>(null);
 
     TestBed.configureTestingModule({
       providers: [
@@ -23,43 +24,37 @@ describe('RoomChatPageComponent', () => {
         },
         { provide: AuthService, useValue: { currentUserSnapshot: null } },
         {
-          provide: ChatRealtimeService,
+          provide: RoomChatFacade,
           useValue: {
+            room,
+            members: signal([]),
+            messages: signal([]),
+            hasMore: signal(false),
+            loading: signal(false),
+            loadingOlder: signal(false),
+            sending: signal(false),
+            membershipChanging: signal(false),
+            settingsSaving: signal(false),
+            memberRemovingId: signal(null),
+            inviteLink: signal(null),
+            inviteGenerating: signal(false),
             connectionState$: of('disconnected'),
-            messageReceived$: of(),
-            userJoinedRoom$: of(),
-            userLeftRoom$: of(),
-            reconnected$: of(),
-            leaveRoom: vi.fn(),
+            scrollToBottom$: of(),
+            initialize: vi.fn(),
+            joinRoom,
           },
-        },
-        { provide: RoomsApiService, useValue: { joinRoom } },
-        {
-          provide: ErrorNotificationService,
-          useValue: { show: vi.fn(), showMessage: vi.fn() },
         },
       ],
     });
 
     const component = TestBed.runInInjectionContext(() => new RoomChatPageComponent());
     const testableComponent = component as unknown as {
-      room: {
-        set(value: {
-          id: string;
-          name: string;
-          createdByUserId: string;
-          createdAt: string;
-          isPrivate: boolean;
-          isMember: boolean;
-        }): void;
-      };
       joinForm: { controls: { password: { setValue(value: string): void } } };
-      roomId: string;
       joinRoom(): void;
     };
 
     expect(component).toBeTruthy();
-    testableComponent.room.set({
+    room.set({
       id: 'room-id',
       name: 'Private room',
       createdByUserId: 'owner-id',
@@ -67,9 +62,8 @@ describe('RoomChatPageComponent', () => {
       isPrivate: true,
       isMember: false,
     });
-    testableComponent.roomId = 'room-id';
     testableComponent.joinForm.controls.password.setValue(' secret123');
     testableComponent.joinRoom();
-    expect(joinRoom).toHaveBeenCalledWith('room-id', ' secret123');
+    expect(joinRoom).toHaveBeenCalledWith(' secret123');
   });
 });

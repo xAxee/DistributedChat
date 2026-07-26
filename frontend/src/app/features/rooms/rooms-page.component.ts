@@ -7,40 +7,34 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 
-import { RoomDetails } from '../../core/models/room.models';
+import { CreateRoomRequest, RoomDetails } from '../../core/models/room.models';
 import { ErrorNotificationService } from '../../core/notifications/error-notification.service';
 import { RoomsApiService } from '../../core/rooms/rooms-api.service';
+import { RoomCreatePopupComponent } from './room-create-popup/room-create-popup.component';
 
 @Component({
   selector: 'app-rooms-page',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, RouterLink, RoomCreatePopupComponent],
   templateUrl: './rooms-page.component.html',
   styleUrl: './rooms-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RoomsPageComponent implements OnInit {
   private readonly roomsApi = inject(RoomsApiService);
-  private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
   private readonly errorNotifications = inject(ErrorNotificationService);
 
   protected readonly rooms = signal<readonly RoomDetails[]>([]);
   protected readonly loadingRooms = signal(false);
   protected readonly creatingRoom = signal(false);
+  protected readonly createRoomOpen = signal(false);
   protected readonly actionRoomId = signal<string | null>(null);
   protected readonly joinedRooms = computed(() => this.rooms().filter((room) => room.isMember));
   protected readonly availableRooms = computed(() => this.rooms().filter((room) => !room.isMember));
   protected readonly joinedRoomCount = computed(() => this.joinedRooms().length);
-
-  protected readonly createRoomForm = this.formBuilder.group({
-    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-    visibility: ['public'],
-    password: ['', [Validators.minLength(8), Validators.maxLength(100)]],
-  });
 
   ngOnInit(): void {
     this.loadRooms();
@@ -48,6 +42,14 @@ export class RoomsPageComponent implements OnInit {
 
   protected refreshDashboard(): void {
     this.loadRooms();
+  }
+
+  protected openCreateRoom(): void {
+    this.createRoomOpen.set(true);
+  }
+
+  protected closeCreateRoom(): void {
+    this.createRoomOpen.set(false);
   }
 
   protected loadRooms(): void {
@@ -64,27 +66,14 @@ export class RoomsPageComponent implements OnInit {
       .subscribe((rooms) => this.rooms.set(rooms));
   }
 
-  protected createRoom(): void {
-    const values = this.createRoomForm.getRawValue();
-    if (values.visibility === 'private' && !values.password.trim()) {
-      this.createRoomForm.controls.password.setErrors({ required: true });
-    }
-
-    if (this.createRoomForm.invalid) {
-      this.createRoomForm.markAllAsTouched();
-      return;
-    }
+  protected createRoom(request: CreateRoomRequest): void {
     this.creatingRoom.set(true);
     this.roomsApi
-      .createRoom({
-        name: values.name.trim(),
-        isPrivate: values.visibility === 'private',
-        password: values.visibility === 'private' ? values.password : null,
-      })
+      .createRoom(request)
       .pipe(finalize(() => this.creatingRoom.set(false)))
       .subscribe({
         next: (room) => {
-          this.createRoomForm.reset();
+          this.createRoomOpen.set(false);
           this.rooms.update((rooms) => [room, ...rooms]);
           void this.router.navigate(['/rooms', room.id]);
         },
@@ -99,24 +88,6 @@ export class RoomsPageComponent implements OnInit {
 
   protected leaveRoom(room: RoomDetails): void {
     this.runRoomAction(room.id, () => this.roomsApi.leaveRoom(room.id), false);
-  }
-
-  protected roomNameError(): string {
-    const control = this.createRoomForm.controls.name;
-    if (control.hasError('required')) return 'Room name is required.';
-    if (control.hasError('minlength')) return 'Room name must be at least 3 characters.';
-    return control.hasError('maxlength') ? 'Room name can be at most 50 characters.' : '';
-  }
-
-  protected roomPasswordError(): string {
-    const control = this.createRoomForm.controls.password;
-    if (control.hasError('required')) return 'Password is required for a private room.';
-    if (control.hasError('minlength')) return 'Password must be at least 8 characters.';
-    return control.hasError('maxlength') ? 'Password can be at most 100 characters.' : '';
-  }
-
-  protected isPrivateRoomSelected(): boolean {
-    return this.createRoomForm.controls.visibility.value === 'private';
   }
 
   private runRoomAction(

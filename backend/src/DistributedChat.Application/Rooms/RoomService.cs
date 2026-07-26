@@ -16,6 +16,8 @@ public sealed class RoomService(
     ICurrentUser currentUser
 ) : IRoomService
 {
+    private const int InviteTokenSizeInBytes = 16;
+
     public async Task<Result<RoomDetailsDto>> CreateRoomAsync(CreateRoomRequest request)
     {
         var currentUserId = GetCurrentUserId();
@@ -257,7 +259,7 @@ public sealed class RoomService(
             return Result.Failure<RoomInviteDto>(ownership.Error!);
         }
 
-        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(InviteTokenSizeInBytes))
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');

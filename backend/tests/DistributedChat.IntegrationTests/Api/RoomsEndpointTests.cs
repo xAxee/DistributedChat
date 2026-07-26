@@ -150,6 +150,10 @@ public sealed class RoomsEndpointTests(PostgreSqlFixture fixture) : IAsyncLifeti
         var secondInvite = await ReadSuccessAsync<RoomInviteDto>(
             await Client.PostAsync($"/api/rooms/{room.Id}/invite", null));
 
+        Assert.Equal(22, firstInvite.Token.Length);
+        Assert.Equal(22, secondInvite.Token.Length);
+        Assert.NotEqual(firstInvite.Token, secondInvite.Token);
+
         var bob = await RegisterAsync("bob@example.com", "bob");
         UseToken(bob.AccessToken);
 

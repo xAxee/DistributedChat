@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { ErrorNotificationService } from '../../core/notifications/error-notification.service';
-import { RoomsApiService } from '../../core/rooms/rooms-api.service';
+import { ErrorNotificationService } from '../../../core/notifications/error-notification.service';
+import { RoomsApiService } from '../../../core/rooms/rooms-api.service';
 
 @Component({
   selector: 'app-invite-join-page',
