@@ -24,7 +24,6 @@ To jest lokalny vault Obsidian dla projektu **DistributedChat**. Zawiera skróco
 - [[09-Operational-Notes]] — health checki, status, konfiguracja i obserwowalność.
 - [[10-Known-Limitations]] — świadome ograniczenia MVP.
 - [[11-Publication-Audit]] — przegląd przed publikacją, AI smells i lista priorytetów.
-- [[12-Private-Rooms-And-Management]] — prywatność pokojów, uprawnienia właściciela i linki zaproszeniowe.
 
 ## Najkrótszy opis
 
