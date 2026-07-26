@@ -47,7 +47,8 @@
     </form>
 
     <div class="auth-card__footer">
-      <span>Already registered?</span><a class="text-button" routerLink="/login">Sign in</a>
+      <span>Already registered?</span><a class="text-button" routerLink="/login"
+        [queryParams]="loginQueryParams()">Sign in</a>
     </div>
   </div>
 </section>

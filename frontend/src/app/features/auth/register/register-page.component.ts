@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PasswordModule } from 'primeng/password';
 import { finalize } from 'rxjs';
 
@@ -17,6 +17,7 @@ import { ErrorNotificationService } from '../../../core/notifications/error-noti
 export class RegisterPageComponent {
   private readonly authService = inject(AuthService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly errorNotifications = inject(ErrorNotificationService);
 
@@ -41,7 +42,7 @@ export class RegisterPageComponent {
       .register(this.form.getRawValue())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => void this.router.navigate(['/rooms']),
+        next: () => void this.router.navigateByUrl(this.returnUrl()),
         error: (error: unknown) =>
           this.errorNotifications.show(error, 'Could not create the account.'),
       });
@@ -80,5 +81,15 @@ export class RegisterPageComponent {
     }
 
     return control.hasError('maxlength') ? 'Password can be at most 128 characters.' : '';
+  }
+
+  protected loginQueryParams(): { returnUrl: string } {
+    return { returnUrl: this.returnUrl() };
+  }
+
+  private returnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+
+    return returnUrl?.startsWith('/') ? returnUrl : '/rooms';
   }
 }

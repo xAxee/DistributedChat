@@ -120,8 +120,8 @@ export class RoomChatPageComponent implements OnInit, OnDestroy {
 
   protected joinRoom(): void {
     const currentRoom = this.room();
-    const password = this.joinForm.controls.password.value.trim();
-    if (currentRoom?.isPrivate && !password) {
+    const password = this.joinForm.controls.password.value;
+    if (currentRoom?.isPrivate && !password.trim()) {
       this.joinForm.controls.password.setErrors({ required: true });
       this.joinForm.controls.password.markAsTouched();
       return;
