@@ -95,11 +95,24 @@ namespace DistributedChat.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<string>("InviteTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("invite_token_hash");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_private");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("name");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
 
                     b.HasKey("Id")
                         .HasName("pk_rooms");
@@ -108,6 +121,10 @@ namespace DistributedChat.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_rooms_created_at");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("InviteTokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_rooms_invite_token_hash");
 
                     b.ToTable("rooms", (string)null);
                 });
@@ -229,7 +246,7 @@ namespace DistributedChat.Infrastructure.Persistence.Migrations
                     b.HasOne("DistributedChat.Domain.Rooms.Room", null)
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_messages_rooms_room_id");
 
@@ -256,7 +273,7 @@ namespace DistributedChat.Infrastructure.Persistence.Migrations
                     b.HasOne("DistributedChat.Domain.Rooms.Room", null)
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_room_members_rooms_room_id");
 

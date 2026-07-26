@@ -167,6 +167,52 @@ public sealed class ChatHubTests(PostgreSqlFixture fixture) : IAsyncLifetime, ID
     }
 
     [Fact]
+    public async Task RemovedMemberDoesNotReceiveFurtherMessagesFromExistingSubscription()
+    {
+        var alice = await RegisterAsync("alice@example.com", "alice");
+        UseToken(alice.AccessToken);
+        var room = await CreateRoomAsync("general");
+
+        var bob = await RegisterAsync("bob@example.com", "bob");
+        UseToken(bob.AccessToken);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.PostAsync($"/api/rooms/{room.Id}/join", null)).StatusCode);
+
+        await using var aliceConnection = CreateHubConnection(alice.AccessToken);
+        await using var bobConnection = CreateHubConnection(bob.AccessToken);
+        var aliceReceived = new TaskCompletionSource<ChatMessageCreated>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var bobReceivedCount = 0;
+
+        aliceConnection.On<ChatMessageCreated>(
+            ChatHubEvents.MessageReceived,
+            message => aliceReceived.TrySetResult(message));
+        bobConnection.On<ChatMessageCreated>(
+            ChatHubEvents.MessageReceived,
+            _ => Interlocked.Increment(ref bobReceivedCount));
+
+        await aliceConnection.StartAsync();
+        await bobConnection.StartAsync();
+        await aliceConnection.InvokeAsync(nameof(ChatHub.JoinRoom), room.Id);
+        await bobConnection.InvokeAsync(nameof(ChatHub.JoinRoom), room.Id);
+
+        UseToken(alice.AccessToken);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.DeleteAsync($"/api/rooms/{room.Id}/members/{bob.User.Id}")).StatusCode);
+
+        await aliceConnection.InvokeAsync(
+            nameof(ChatHub.SendMessage),
+            new SendMessageDto(room.Id, "members only"));
+
+        await WaitForAsync(aliceReceived.Task);
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+
+        Assert.Equal(0, Volatile.Read(ref bobReceivedCount));
+    }
+
+    [Fact]
     public async Task LeaveRoomWithoutSubscriptionDoesNotPublishUserLeftRoom()
     {
         var alice = await RegisterAsync("alice@example.com", "alice");

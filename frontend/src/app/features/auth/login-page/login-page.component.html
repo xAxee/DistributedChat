@@ -38,7 +38,8 @@
     </form>
 
     <div class="auth-card__footer">
-      <span>New here?</span><a class="text-button" routerLink="/register">Create account</a>
+      <span>New here?</span><a class="text-button" routerLink="/register"
+        [queryParams]="registrationQueryParams()">Create account</a>
     </div>
   </div>
 </section>

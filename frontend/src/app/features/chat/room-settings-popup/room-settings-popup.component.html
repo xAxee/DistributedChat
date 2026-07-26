@@ -1,0 +1,98 @@
+<div class="popup-overlay">
+  <button
+    class="popup-backdrop"
+    type="button"
+    aria-label="Close room settings"
+    [disabled]="saving || inviteGenerating"
+    (click)="close()"
+  ></button>
+  <section
+    class="room-settings"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="room-settings-title"
+  >
+    <header class="popup-heading">
+      <div>
+        <p class="page-eyebrow">Manage room</p>
+        <h2 id="room-settings-title">Room settings</h2>
+      </div>
+      <button
+        class="icon-button"
+        type="button"
+        aria-label="Close room settings"
+        [disabled]="saving || inviteGenerating"
+        (click)="close()"
+      >
+        <i class="pi pi-times" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <form class="settings-form" [formGroup]="roomSettingsForm" (ngSubmit)="saveRoomName()">
+      <label for="settings-room-name">Room name</label>
+      <div class="settings-form__row">
+        <input
+          class="editorial-input"
+          id="settings-room-name"
+          formControlName="name"
+          maxlength="50"
+        />
+        <button class="text-button" type="submit" [disabled]="saving">Save</button>
+      </div>
+    </form>
+
+    @if (room.isPrivate) {
+      <form
+        class="settings-form"
+        [formGroup]="passwordSettingsForm"
+        (ngSubmit)="saveRoomPassword()"
+      >
+        <label for="settings-room-password">New password</label>
+        <div class="settings-form__row">
+          <input
+            class="editorial-input"
+            id="settings-room-password"
+            type="password"
+            formControlName="password"
+            maxlength="100"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+          />
+          <button class="text-button" type="submit" [disabled]="saving">Change</button>
+        </div>
+      </form>
+    }
+
+    <div class="settings-form">
+      <span class="settings-form__label">Invitation link</span>
+      @if (inviteLink; as link) {
+        <div class="settings-form__row">
+          <input class="editorial-input" readonly [value]="link" aria-label="Invitation link" />
+          <button class="text-button" type="button" (click)="inviteCopyRequested.emit()">
+            Copy
+          </button>
+        </div>
+      }
+      <button
+        class="text-button generate-invite-button"
+        type="button"
+        [disabled]="inviteGenerating"
+        (click)="inviteRequested.emit()"
+      >
+        {{
+          inviteGenerating ? 'Generating...' : inviteLink ? 'Generate a new link' : 'Generate link'
+        }}
+      </button>
+      <small>Generating a new link disables the previous one.</small>
+    </div>
+
+    <button
+      class="text-button danger-button"
+      type="button"
+      [disabled]="saving"
+      (click)="roomDeleteRequested.emit()"
+    >
+      Delete room
+    </button>
+  </section>
+</div>

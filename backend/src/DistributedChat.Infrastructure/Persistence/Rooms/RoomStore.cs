@@ -21,19 +21,50 @@ public sealed class RoomStore(DistributedChatDbContext dbContext) : IRoomStore
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new RoomDetailsDto(room.Id, room.Name, room.CreatedByUserId, room.CreatedAt, IsMember: true);
+        return new RoomDetailsDto(
+            room.Id,
+            room.Name,
+            room.CreatedByUserId,
+            room.CreatedAt,
+            IsMember: true,
+            room.IsPrivate);
     }
 
     public async Task<IReadOnlyCollection<RoomSummaryDto>> ListAsync(
+        Guid currentUserId,
         CancellationToken cancellationToken = default
     )
     {
         return await dbContext.Rooms
             .AsNoTracking()
+            .Where(room => !room.IsPrivate
+                || dbContext.RoomMembers.Any(member =>
+                    member.RoomId == room.Id && member.UserId == currentUserId))
             .OrderByDescending(room => room.CreatedAt)
             .ThenByDescending(room => room.Id)
-            .Select(room => new RoomSummaryDto(room.Id, room.Name, room.CreatedByUserId, room.CreatedAt))
+            .Select(room => new RoomSummaryDto(
+                room.Id,
+                room.Name,
+                room.CreatedByUserId,
+                room.CreatedAt,
+                room.IsPrivate,
+                dbContext.RoomMembers.Any(member =>
+                    member.RoomId == room.Id && member.UserId == currentUserId)))
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<Room?> GetAsync(Guid roomId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Rooms.SingleOrDefaultAsync(room => room.Id == roomId, cancellationToken);
+    }
+
+    public Task<Room?> GetByInviteTokenHashAsync(
+        string inviteTokenHash,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return dbContext.Rooms
+            .SingleOrDefaultAsync(room => room.InviteTokenHash == inviteTokenHash, cancellationToken);
     }
 
     public Task<RoomDetailsDto?> GetDetailsAsync(
@@ -52,7 +83,8 @@ public sealed class RoomStore(DistributedChatDbContext dbContext) : IRoomStore
                 room.CreatedAt,
                 dbContext.RoomMembers
                     .AsNoTracking()
-                    .Any(member => member.RoomId == room.Id && member.UserId == currentUserId)))
+                    .Any(member => member.RoomId == room.Id && member.UserId == currentUserId),
+                room.IsPrivate))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -116,6 +148,18 @@ public sealed class RoomStore(DistributedChatDbContext dbContext) : IRoomStore
             .ExecuteDeleteAsync(cancellationToken);
     }
 
+    public async Task DeleteAsync(Guid roomId, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Rooms
+            .Where(room => room.Id == roomId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<RoomMemberDto>> GetMembersAsync(
         Guid roomId,
         DateTimeOffset onlineAfter,
@@ -175,6 +219,18 @@ public sealed class RoomStore(DistributedChatDbContext dbContext) : IRoomStore
                     instanceIds);
             })
             .ToList();
+    }
+
+    public async Task<IReadOnlyCollection<Guid>> GetMemberUserIdsAsync(
+        Guid roomId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await dbContext.RoomMembers
+            .AsNoTracking()
+            .Where(member => member.RoomId == roomId)
+            .Select(member => member.UserId)
+            .ToListAsync(cancellationToken);
     }
 
     private static bool IsRoomMemberDuplicate(DbUpdateException exception)

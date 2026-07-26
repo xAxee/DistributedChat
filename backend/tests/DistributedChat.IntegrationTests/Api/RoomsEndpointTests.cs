@@ -102,6 +102,141 @@ public sealed class RoomsEndpointTests(PostgreSqlFixture fixture) : IAsyncLifeti
     }
 
     [Fact]
+    public async Task PrivateRoomIsHiddenAndRequiresItsPassword()
+    {
+        var alice = await RegisterAsync("alice@example.com", "alice");
+        UseToken(alice.AccessToken);
+        var room = await CreateRoomAsync("private room", isPrivate: true, password: "secret123");
+
+        Assert.True(room.IsPrivate);
+
+        var bob = await RegisterAsync("bob@example.com", "bob");
+        UseToken(bob.AccessToken);
+
+        var rooms = await ReadSuccessAsync<IReadOnlyCollection<RoomSummaryDto>>(
+            await Client.GetAsync("/api/rooms"));
+        Assert.DoesNotContain(rooms, candidate => candidate.Id == room.Id);
+
+        await ReadProblemAsync(
+            await Client.PostAsJsonAsync($"/api/rooms/{room.Id}/join", new JoinRoomDto()),
+            HttpStatusCode.BadRequest);
+        await ReadProblemAsync(
+            await Client.PostAsJsonAsync(
+                $"/api/rooms/{room.Id}/join",
+                new JoinRoomDto("incorrect")),
+            HttpStatusCode.Forbidden);
+
+        var joinResponse = await Client.PostAsJsonAsync(
+            $"/api/rooms/{room.Id}/join",
+            new JoinRoomDto("secret123"));
+        Assert.Equal(HttpStatusCode.NoContent, joinResponse.StatusCode);
+
+        rooms = await ReadSuccessAsync<IReadOnlyCollection<RoomSummaryDto>>(
+            await Client.GetAsync("/api/rooms"));
+        var joinedRoom = Assert.Single(rooms, candidate => candidate.Id == room.Id);
+        Assert.True(joinedRoom.IsPrivate);
+        Assert.True(joinedRoom.IsMember);
+    }
+
+    [Fact]
+    public async Task InvitationBypassesPasswordAndRotationInvalidatesPreviousToken()
+    {
+        var alice = await RegisterAsync("alice@example.com", "alice");
+        UseToken(alice.AccessToken);
+        var room = await CreateRoomAsync("private room", isPrivate: true, password: "secret123");
+
+        var firstInvite = await ReadSuccessAsync<RoomInviteDto>(
+            await Client.PostAsync($"/api/rooms/{room.Id}/invite", null));
+        var secondInvite = await ReadSuccessAsync<RoomInviteDto>(
+            await Client.PostAsync($"/api/rooms/{room.Id}/invite", null));
+
+        Assert.Equal(22, firstInvite.Token.Length);
+        Assert.Equal(22, secondInvite.Token.Length);
+        Assert.NotEqual(firstInvite.Token, secondInvite.Token);
+
+        var bob = await RegisterAsync("bob@example.com", "bob");
+        UseToken(bob.AccessToken);
+
+        await ReadProblemAsync(
+            await Client.PostAsync($"/api/rooms/invitations/{firstInvite.Token}/join", null),
+            HttpStatusCode.NotFound);
+
+        var joined = await ReadSuccessAsync<RoomDetailsDto>(
+            await Client.PostAsync($"/api/rooms/invitations/{secondInvite.Token}/join", null));
+        Assert.Equal(room.Id, joined.Id);
+        Assert.True(joined.IsMember);
+    }
+
+    [Fact]
+    public async Task OwnerCanRenameChangePasswordRemoveMemberAndDeleteRoom()
+    {
+        var alice = await RegisterAsync("alice@example.com", "alice");
+        UseToken(alice.AccessToken);
+        var room = await CreateRoomAsync("private room", isPrivate: true, password: "secret123");
+
+        var bob = await RegisterAsync("bob@example.com", "bob");
+        UseToken(bob.AccessToken);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.PostAsJsonAsync(
+                $"/api/rooms/{room.Id}/join",
+                new JoinRoomDto("secret123"))).StatusCode);
+
+        await ReadProblemAsync(
+            await Client.PutAsJsonAsync($"/api/rooms/{room.Id}", new UpdateRoomDto("renamed room")),
+            HttpStatusCode.Forbidden);
+
+        UseToken(alice.AccessToken);
+        var renamed = await ReadSuccessAsync<RoomDetailsDto>(
+            await Client.PutAsJsonAsync($"/api/rooms/{room.Id}", new UpdateRoomDto("renamed room")));
+        Assert.Equal("renamed room", renamed.Name);
+
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.PutAsJsonAsync(
+                $"/api/rooms/{room.Id}/password",
+                new ChangeRoomPasswordDto("newSecret123"))).StatusCode);
+
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.DeleteAsync($"/api/rooms/{room.Id}/members/{bob.User.Id}")).StatusCode);
+
+        UseToken(bob.AccessToken);
+        await ReadProblemAsync(
+            await Client.GetAsync($"/api/rooms/{room.Id}/members"),
+            HttpStatusCode.Forbidden);
+        await ReadProblemAsync(
+            await Client.PostAsJsonAsync(
+                $"/api/rooms/{room.Id}/join",
+                new JoinRoomDto("secret123")),
+            HttpStatusCode.Forbidden);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await Client.PostAsJsonAsync(
+                $"/api/rooms/{room.Id}/join",
+                new JoinRoomDto("newSecret123"))).StatusCode);
+
+        UseToken(alice.AccessToken);
+        Assert.Equal(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/api/rooms/{room.Id}")).StatusCode);
+        await ReadProblemAsync(await Client.GetAsync($"/api/rooms/{room.Id}"), HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task OwnerCannotLeaveOrRemoveThemself()
+    {
+        var alice = await RegisterAsync("alice@example.com", "alice");
+        UseToken(alice.AccessToken);
+        var room = await CreateRoomAsync("general");
+
+        await ReadProblemAsync(
+            await Client.PostAsync($"/api/rooms/{room.Id}/leave", null),
+            HttpStatusCode.Conflict);
+        await ReadProblemAsync(
+            await Client.DeleteAsync($"/api/rooms/{room.Id}/members/{alice.User.Id}"),
+            HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task MembersAndHistoryRequireMembership()
     {
         var alice = await RegisterAsync("alice@example.com", "alice");
@@ -169,9 +304,15 @@ public sealed class RoomsEndpointTests(PostgreSqlFixture fixture) : IAsyncLifeti
         return await ReadSuccessAsync<AuthResponse>(response);
     }
 
-    private async Task<RoomDetailsDto> CreateRoomAsync(string name)
+    private async Task<RoomDetailsDto> CreateRoomAsync(
+        string name,
+        bool isPrivate = false,
+        string? password = null
+    )
     {
-        var response = await Client.PostAsJsonAsync("/api/rooms", new CreateRoomDto(name));
+        var response = await Client.PostAsJsonAsync(
+            "/api/rooms",
+            new CreateRoomDto(name, isPrivate, password));
 
         return await ReadSuccessAsync<RoomDetailsDto>(response);
     }

@@ -1,3 +1,4 @@
+using DistributedChat.Domain.Rooms;
 using FluentValidation;
 
 namespace DistributedChat.Api.Dtos;
@@ -14,5 +15,14 @@ public sealed class CreateRoomDtoValidator : AbstractValidator<CreateRoomDto>
                 .WithMessage("Room name must be at least 3 characters.")
             .Must(value => value!.Trim().Length <= 50)
                 .WithMessage("Room name must be 50 characters or fewer.");
+
+        When(request => request.IsPrivate, () =>
+        {
+            RuleFor(request => request.Password)
+                .NotEmpty()
+                .Must(password => !string.IsNullOrWhiteSpace(password))
+                .MinimumLength(Room.MinimumPasswordLength)
+                .MaximumLength(Room.MaximumPasswordLength);
+        });
     }
 }

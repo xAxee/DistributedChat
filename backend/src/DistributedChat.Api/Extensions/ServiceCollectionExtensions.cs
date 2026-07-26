@@ -39,6 +39,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<RegisterDto>, RegisterDtoValidator>();
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<CreateRoomDto>, CreateRoomDtoValidator>();
+        services.AddScoped<IValidator<UpdateRoomDto>, UpdateRoomDtoValidator>();
+        services.AddScoped<IValidator<ChangeRoomPasswordDto>, ChangeRoomPasswordDtoValidator>();
 
         return services;
     }

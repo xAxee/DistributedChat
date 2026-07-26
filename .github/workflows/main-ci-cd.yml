@@ -77,6 +77,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate Compose file
+        run: docker compose --env-file .env.example config
+
       - name: Set image owner
         shell: bash
         run: echo "IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"

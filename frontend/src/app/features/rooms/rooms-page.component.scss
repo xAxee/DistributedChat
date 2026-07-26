@@ -10,6 +10,12 @@
   margin-bottom: 1.5rem;
 }
 
+.page-heading__actions {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+}
+
 .page-heading h1 {
   font-size: clamp(1.8rem, 4vw, 2.35rem);
   letter-spacing: -0.045em;
@@ -17,8 +23,7 @@
   margin: 0.35rem 0 0.25rem;
 }
 
-.page-heading p:not(.page-eyebrow),
-.create-room-card p {
+.page-heading p:not(.page-eyebrow) {
   color: var(--muted);
   font-size: 0.82rem;
   margin: 0;
@@ -44,7 +49,6 @@
 
 .stat-card,
 .system-card,
-.create-room-card,
 .room-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -75,8 +79,7 @@
   padding: 1rem;
 }
 
-.section-heading h2,
-.create-room-card h2 {
+.section-heading h2 {
   font-size: 1rem;
   letter-spacing: -0.025em;
   margin: 0.3rem 0 0;
@@ -163,35 +166,6 @@
   color: var(--muted);
   font-size: 0.72rem;
   margin: 0.9rem 0 0;
-}
-
-.create-room-form {
-  display: contents;
-}
-
-.create-room-card .room-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.create-room-card label {
-  font-size: 1rem;
-  font-weight: 650;
-  letter-spacing: -0.03em;
-}
-
-.create-room-card__hint {
-  color: var(--muted);
-  font-size: 0.65rem;
-}
-
-.create-room-card .room-card__open {
-  background: none;
-  border: 0;
-  color: var(--ink);
-  cursor: pointer;
-  font-family: inherit;
 }
 
 .rooms-list__heading {
@@ -390,18 +364,7 @@
     grid-column: 1 / -1;
   }
 
-  .create-room-card,
-  .create-room-form,
   .rooms-grid {
     grid-template-columns: 1fr;
-  }
-
-  .create-room-card {
-    gap: 1rem;
-  }
-
-  .create-room-form__submit {
-    margin-top: 0;
-    width: 100%;
   }
 }

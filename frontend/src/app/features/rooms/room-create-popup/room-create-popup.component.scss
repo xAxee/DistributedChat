@@ -1,0 +1,63 @@
+.popup-overlay {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1.25rem;
+  position: fixed;
+  z-index: 1000;
+}
+
+.popup-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  border: 0;
+  inset: 0;
+  position: absolute;
+}
+
+.create-room-dialog {
+  background: var(--surface);
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 1rem;
+  max-width: 29rem;
+  padding: 1.15rem;
+  position: relative;
+  width: 100%;
+}
+
+.popup-heading,
+.popup-actions {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-heading {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.9rem;
+}
+
+.popup-heading h2 {
+  font-size: 1.15rem;
+  margin: 0.2rem 0 0;
+}
+
+.create-room-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.create-room-form label {
+  color: var(--muted-strong);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.popup-actions {
+  border-top: 1px solid var(--line);
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+}

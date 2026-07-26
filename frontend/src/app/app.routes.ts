@@ -6,7 +6,7 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/login/login-page.component').then(
+      import('./features/auth/login-page/login-page.component').then(
         (component) => component.LoginPageComponent,
       ),
     title: 'Sign in | DistributedChat',
@@ -14,7 +14,7 @@ export const routes: Routes = [
   {
     path: 'register',
     loadComponent: () =>
-      import('./features/auth/register/register-page.component').then(
+      import('./features/auth/register-page/register-page.component').then(
         (component) => component.RegisterPageComponent,
       ),
     title: 'Create account | DistributedChat',
@@ -31,10 +31,19 @@ export const routes: Routes = [
   {
     path: 'about',
     loadComponent: () =>
-      import('./features/about/about-page.component').then(
+      import('./features/about-page/about-page.component').then(
         (component) => component.AboutPageComponent,
       ),
     title: 'About | DistributedChat',
+  },
+  {
+    path: 'invite/:token',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/rooms/invite-join-page/invite-join-page.component').then(
+        (component) => component.InviteJoinPageComponent,
+      ),
+    title: 'Room invitation | DistributedChat',
   },
   {
     path: 'rooms/:roomId',

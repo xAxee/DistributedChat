@@ -1,0 +1,73 @@
+.popup-overlay {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1.25rem;
+  position: fixed;
+  z-index: 1000;
+}
+
+.popup-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  border: 0;
+  inset: 0;
+  position: absolute;
+}
+
+.room-settings {
+  background: var(--surface);
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 1rem;
+  max-height: calc(100vh - 2.5rem);
+  max-width: 31rem;
+  overflow-y: auto;
+  padding: 1.15rem;
+  position: relative;
+  width: 100%;
+}
+
+.popup-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.9rem;
+}
+
+.settings-form {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.settings-form label,
+.settings-form__label {
+  color: var(--muted-strong);
+  font-size: 0.67rem;
+  font-weight: 650;
+}
+
+.settings-form__row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.settings-form__row .editorial-input {
+  min-width: 0;
+}
+
+.settings-form small {
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.generate-invite-button,
+.danger-button {
+  justify-self: start;
+}
+
+.danger-button {
+  color: var(--red);
+}

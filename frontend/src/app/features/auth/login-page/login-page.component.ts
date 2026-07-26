@@ -54,6 +54,10 @@ export class LoginPageComponent {
     return this.form.controls.password.hasError('required') ? 'Password is required.' : '';
   }
 
+  protected registrationQueryParams(): { returnUrl: string } {
+    return { returnUrl: this.returnUrl() };
+  }
+
   private returnUrl(): string {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
 

@@ -40,7 +40,7 @@ public sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
             .HasOne<Room>()
             .WithMany()
             .HasForeignKey(message => message.RoomId)
-            .OnDelete(DeleteBehavior.Restrict)
+            .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_messages_rooms_room_id");
 
         builder

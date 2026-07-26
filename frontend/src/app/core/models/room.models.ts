@@ -3,11 +3,11 @@ export interface RoomSummary {
   name: string;
   createdByUserId: string;
   createdAt: string;
-}
-
-export interface RoomDetails extends RoomSummary {
+  isPrivate: boolean;
   isMember: boolean;
 }
+
+export type RoomDetails = RoomSummary;
 
 export interface RoomMember {
   roomId: string;
@@ -18,4 +18,10 @@ export interface RoomMember {
 
 export interface CreateRoomRequest {
   name: string;
+  isPrivate: boolean;
+  password: string | null;
+}
+
+export interface RoomInvite {
+  token: string;
 }
