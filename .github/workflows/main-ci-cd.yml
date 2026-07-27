@@ -1,16 +1,23 @@
 name: Main CI/CD
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+  workflow_dispatch:
+
 permissions:
   contents: read
-  packages: write
 
 concurrency:
-  group: main-${{ github.workflow }}-${{ github.ref }}
+  group: distributed-chat-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,14 +38,22 @@ jobs:
         run: dotnet restore DistributedChat.slnx
 
       - name: Build backend
-        run: dotnet build DistributedChat.slnx --configuration Release --no-restore
+        run: >
+          dotnet build DistributedChat.slnx
+          --configuration Release
+          --no-restore
 
       - name: Test backend
-        run: dotnet test DistributedChat.slnx --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test DistributedChat.slnx
+          --configuration Release
+          --no-build
+          --verbosity normal
 
   frontend:
     name: Frontend | Build & test
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: frontend
@@ -69,13 +84,29 @@ jobs:
   publish-images:
     name: Docker | Build & publish images
     runs-on: ubuntu-latest
+
+    if: github.event_name == 'push'
+
     needs:
       - backend
       - frontend
 
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "Invalid release tag: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
 
       - name: Validate Compose file
         run: docker compose --env-file .env.example config
@@ -84,7 +115,7 @@ jobs:
         shell: bash
         run: echo "IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
@@ -99,9 +130,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ env.IMAGE_OWNER }}/distributed-chat-api
+          flavor: |
+            latest=false
           tags: |
-            type=raw,value=latest
-            type=raw,value=${{ github.sha }}
+            type=sha,format=long,prefix=sha-
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
 
       - name: Build and publish API image
         uses: docker/build-push-action@v6
@@ -118,9 +152,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ env.IMAGE_OWNER }}/distributed-chat-web
+          flavor: |
+            latest=false
           tags: |
-            type=raw,value=latest
-            type=raw,value=${{ github.sha }}
+            type=sha,format=long,prefix=sha-
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
 
       - name: Build and publish web image
         uses: docker/build-push-action@v6
@@ -131,3 +168,63 @@ jobs:
           push: true
           tags: ${{ steps.web-meta.outputs.tags }}
           labels: ${{ steps.web-meta.outputs.labels }}
+
+  deploy-release:
+    name: Production | Deploy release
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    needs:
+      - publish-images
+
+    steps:
+      - name: Configure deployment SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+
+          printf '%s\n' "${VPS_SSH_KEY}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${VPS_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+          chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy release to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            "deploy-distributed-chat ${version}"
+
+  create-release:
+    name: GitHub | Create release
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    needs:
+      - deploy-release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "DistributedChat ${GITHUB_REF_NAME}" \
+            --generate-notes
