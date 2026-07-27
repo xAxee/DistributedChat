@@ -12,12 +12,16 @@ COPY backend/src/DistributedChat.Infrastructure/DistributedChat.Infrastructure.c
 RUN dotnet restore backend/src/DistributedChat.Api/DistributedChat.Api.csproj
 
 FROM restore AS publish
+ARG APP_VERSION=0.0.0-local
 COPY . .
 RUN dotnet publish backend/src/DistributedChat.Api/DistributedChat.Api.csproj \
     --configuration Release \
     --no-restore \
     --output /app/publish \
-    /p:UseAppHost=false
+    /p:UseAppHost=false \
+    /p:Version="${APP_VERSION}" \
+    /p:InformationalVersion="${APP_VERSION}" \
+    /p:IncludeSourceRevisionInInformationalVersion=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

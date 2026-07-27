@@ -108,6 +108,19 @@ jobs:
             exit 1
           fi
 
+      - name: Resolve application version
+        id: app-version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+          echo "Application version: ${version}"
+
       - name: Validate Compose file
         run: docker compose --env-file .env.example config
 
@@ -144,6 +157,8 @@ jobs:
           file: backend/src/DistributedChat.Api/Dockerfile
           target: runtime
           push: true
+          build-args: |
+            APP_VERSION=${{ steps.app-version.outputs.value }}
           tags: ${{ steps.api-meta.outputs.tags }}
           labels: ${{ steps.api-meta.outputs.labels }}
 
