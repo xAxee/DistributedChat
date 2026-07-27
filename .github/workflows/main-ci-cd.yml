@@ -238,8 +238,32 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
+          version="${GITHUB_REF_NAME#v}"
+
+          release_notes="$(cat <<EOF
+          ## DistributedChat ${version}
+
+          Production release of DistributedChat.
+
+          ### Deployment
+
+          - Backend and frontend deployed to production
+          - Docker images published to GitHub Container Registry
+          - Production health checks completed successfully
+
+          ### Application
+
+          - Website: https://chat.hubertiwan.pl
+          - API version: ${version}
+          - Docker image tag: ${version}
+          EOF
+          )"
+
           gh release create "${GITHUB_REF_NAME}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "DistributedChat ${GITHUB_REF_NAME}" \
-            --generate-notes
+            --title "DistributedChat ${version}" \
+            --notes "${release_notes}" \
+            --generate-notes \
+            --verify-tag
